@@ -17,10 +17,12 @@ import fix.error_flag_fix as error_flag_fix
 import time
 import glob
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 import sqlite3
 
 
+print("Starting")
+print(datetime.now().strftime("%H:%M"))
 conn: sqlite3.Connection = sqlite3.connect(sqldbname)
 
 # Create the raw event tables
@@ -31,6 +33,8 @@ create_tables.cr_tb_dr(conn)
 
 # Load the recent files (using the faster, traditional method)
 
+print("Load files by month")
+print(datetime.now().strftime("%H:%M"))
 s1 = time.perf_counter()
 for fname in glob.iglob(join(raw_data_dir, '*.dat')):
     db_load.import_precip_file(fname, conn)
@@ -58,6 +62,8 @@ print(f"Load of files by month took {e1-s1:0.1f} seconds.")
 # These were originally stored as one file per station/year, but the command we used above extracted them to one file
 # per year with all stations in it.
 
+print("Load files by year")
+print(datetime.now().strftime("%H:%M"))
 s1 = time.perf_counter()
 for fname in glob.iglob(join(raw_data_dir, '*.txt')):
     db_load.import_precip_file(fname, conn)
@@ -74,6 +80,8 @@ print(f"Load of files by year took {e1-s1:0.1f} seconds.")
 
 # Add secondary indexes on tables (station period)
 
+print("Adding indexes")
+print(datetime.now().strftime("%H:%M"))
 create_tables.add_indexes_hr_dr(conn)
 
 # Check on totals
@@ -87,24 +95,29 @@ create_tables.add_indexes_hr_dr(conn)
 # 2002	232385	765458
 # 2003	248909	829556
 # 2004	239814	809461
-# 2005	232340	781760
-# 2006	233241	777335
-# 2007	230146	752184
-# 2008	235757	796108
+# 2005	232347	781775
+# 2006	233490	778088
+# 2007	230593	753663
+# 2008	236190	797741
 # 2009	239136	821712
 # 2010	222705	778793
 # 2011	213433	747329
 # 2012	201932	706220
 # 2013	218838	802346
-# Total	3451627	11606809
+# Total	3452763	11610689
 
 # Here is the logic to check the numbers
 
+print("Checking the counts")
+print(datetime.now().strftime("%H:%M"))
+
 # Get results from text files
+print("  from text files")
 record_count.count_records_range('1999', '2013')
 
 # Get results from SQL files
 
+print("  from SQL tables")
 querystr = """
     SELECT SUBSTR(period,1,4) as year, COUNT(1)
     FROM hourly_raw
@@ -142,6 +155,8 @@ print(f"Sum: {df['COUNT(1)'].sum():d}")
 
 ## History table
 
+print("Import station history")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_station_hist(conn)
 
 db_load.import_station_file(station_hist_fname, conn)
@@ -150,18 +165,23 @@ create_tables.add_indexes_station_hist(conn)
 
 ## Table of most recent rows
 
+print("Create station master")
 # This creates the table from a SELECT, so we don't need to fill it separately.
 create_tables.cr_tb_station_mast(conn)
 create_tables.add_indexes_station_mast(conn)
 
 # Dates
 
+print("Create table of dates")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_date(conn)
 db_load.load_dates(date(1960, 1, 1), date(1998, 12, 31), conn)
 create_tables.add_indexes_date(conn)
 
 # States
 
+print("Create table of states")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_state(conn)
 db_load.fill_states(conn)
 create_tables.add_indexes_state(conn)
@@ -174,6 +194,8 @@ create_tables.add_indexes_state(conn)
 # This data has errors in 2007 Q1: some days are missing the error flags that they would normally have to reflect the
 # errors in the hourly data.
 
+print("Finding and Fixing Error Flags")
+print(datetime.now().strftime("%H:%M"))
 ## Gather list of missing daily errors
 error_flag_fix.find_error_dates(conn)
 error_flag_fix.find_mismatches(conn)
@@ -182,6 +204,8 @@ error_flag_fix.update_from_mismatches(conn)
 
 # Coverage by station period
 
+print("Coverage by station/period")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_period_coverage(conn)
 for i in range(1999, 2014):
     coverage.calc_over_range('000000', '%d-01' % i, '999999', '%d-12' % i)
@@ -190,11 +214,21 @@ for i in range(1999, 2014):
 # Building Derived Tables
 
 # Periods with complete days
+#   This includes days which have an accumulated amount for more than one hour.
+#   It does not include accumulations that run across multiple days.
 
+print("Finding periods with complete days")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_s_period_d(conn)
 station_period.load_station_period_d()
 
 # Periods with complete hours
+#   This does not include any periods with accumulations.
 
+print("Finding periods with complete hours")
+print(datetime.now().strftime("%H:%M"))
 create_tables.cr_tb_s_period_h(conn)
 station_period.load_station_period_h()
+
+print("Ending")
+print(datetime.now().strftime("%H:%M"))

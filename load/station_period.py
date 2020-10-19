@@ -42,8 +42,8 @@ def load_station_period_h():
     :return: None
     """
     querystr = '''
-        INSERT INTO station_period
-        SELECT DISTINCT station,
+        INSERT INTO station_period_h
+        SELECT station,
             period,
             SUM(amount),
             CASE WHEN MAX(units) = 'HI' THEN 1 ELSE 2 END AS units_flag
@@ -51,12 +51,13 @@ def load_station_period_h():
         WHERE NOT EXISTS (
             SELECT 1 FROM hourly_raw hr2
             WHERE hr2.station = hr.station
-            AND hr2.period hr.period
+            AND hr2.period = hr.period
             AND (
                 flag1 IN ('a','A',',','[',']','{','}')
                 OR flag2 IN ('Q','q')
             )
         )
+        GROUP BY station, period
     '''
 
     conn: sqlite3.Connection = sqlite3.connect(sqldbname)

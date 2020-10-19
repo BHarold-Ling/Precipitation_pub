@@ -128,7 +128,7 @@ def find_mismatches(conn: sqlite3.Connection):
             WHERE edd.station = edha.station
             AND edd.read_date = edha.read_date
         )
-        AND count1 count1 % 2 = 0
+        AND count1 % 2 = 0
         AND EXISTS (
             SELECT 1
             FROM hourly_raw hr 
@@ -163,9 +163,10 @@ def update_from_mismatches(conn: sqlite3.Connection):
     querystr = '''
         UPDATE daily_raw
         SET flag1 = 'P'
-        FROM error_days_miss edm
-        WHERE daily_raw.station = edm.station
-        AND daily_raw.read_date = edm.read_date
+        WHERE (station, read_date) IN (
+            SELECT station, read_date 
+            FROM error_days_miss edm
+        )
     '''
     curr.execute(querystr)
 

@@ -10,14 +10,14 @@ month_list = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oc
 
 # Here is the default structure:
 #
-# Precipitation
+# /Precipitation
 #   work_data
 #   hourly_data
 #      orig
 #   mshr_enhanced
 
 # work_base_dir could be relative to your working directory.  In my setup, all other data is under this one directory.
-work_base_dir = r"C:\Users\Bruce\Documents\Development\Data Analytics\Precipitation"
+work_base_dir = r"/Precipitation"
 # The work data directory holds the SQL file.
 work_data_dir = join(work_base_dir, "work_data")
 # The raw data directory holds the precipitation text files.
@@ -32,4 +32,4 @@ station_data_dir = join(work_base_dir, "mshr_enhanced")
 # Station history filename is likely to need adjustment to the date portion.
 station_hist_fname = join(station_data_dir, "MSHR_Enhanced_201911.txt")
 # SQL DB Name (for sqlite)
-sqldbname = join(work_data_dir, "precip_r2.sqlite")
+sqldbname = join(work_data_dir, "precip.sqlite")
